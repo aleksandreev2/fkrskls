@@ -20,7 +20,7 @@ Each run records:
 - structured engineering decision/output;
 - self-reported supporting references actually consulted;
 - whether Developer Intelligence was used;
-- observable skill/reference signals from the host event stream;
+- observable skill/reference signals from successful host tool calls (a `Skill` invocation or a successful command containing the skill entrypoint path), never an unverified claim that an arbitrary path-bearing command actually read the file;
 - tool-call counts where exposed by the host;
 - input/cached/output token usage where exposed;
 - Claude API cost when reported by Claude Code;
@@ -39,11 +39,13 @@ For every run the runner creates a fresh detached Git worktree at the requested 
 ### Codex
 
 - baseline removes project `fukurou-development` copies;
-- with-skill copies only `SKILL.md`, `references/`, and `agents/` to `.agents/skills/fukurou-development`;
+- baseline removes canonical `.agents/skills/fukurou-development` and legacy `.codex/skills/fukurou-development` project copies;
+- with-skill copies only `SKILL.md`, `references/`, and `agents/` to Codex's canonical repo location `.agents/skills/fukurou-development`;
 - `evals/` and installer scripts are never copied into the benchmark worktree;
-- a temporary `HOME` hides personal `$HOME/.agents/skills` from discovery;
-- `CODEX_HOME` remains pointed at the user's real Codex home so existing authentication can still work;
+- a temporary `HOME` redirects incidental user-home writes, while `CODEX_HOME` remains pointed at the user's real Codex home so existing authentication can still work;
 - `--ignore-user-config` removes user configuration as a benchmark variable;
+- `--approve-for-me` enables the CLI's guarded workspace-write mode and lets Developer Intelligence diagnostics run non-interactively (Codex 0.147 rejects combining it with an explicit `--sandbox` flag);
+- when a user-global `fukurou-development` is installed, baseline execution fails closed unless `--mask-user-skill` is explicit; that option moves only the exact installed skill directories out of discovery for the pair and restores them in `finally`;
 - sessions are ephemeral.
 
 ### Claude Code
@@ -57,7 +59,11 @@ For every run the runner creates a fresh detached Git worktree at the requested 
 
 ### Purity guard
 
-The injected `.agents/skills/fukurou-development/` or `.claude/skills/fukurou-development/` tree is the only untracked benchmark content ignored by the purity check. Any other tracked **or untracked** file created or modified by the agent is reported as a planning-only violation. Ignored Fukurou Developer Intelligence runtime state remains ignored by Git normally.
+The canonical injected `.agents/skills/fukurou-development/` or `.claude/skills/fukurou-development/` tree is ignored by the purity check. Benchmark-controlled removal of a legacy `.codex/skills/fukurou-development/` contamination source is ignored as well. Any other tracked **or untracked** file created or modified by the agent is reported as a planning-only violation. Ignored Fukurou Developer Intelligence runtime state remains ignored by Git normally.
+
+Codex receives the full UTF-8 benchmark prompt through stdin. This avoids Windows command-wrapper truncation or newline/Unicode corruption and keeps long prompts out of the process command line.
+
+`references_used` is reserved for specialized skill references (`references/<name>.md`), not application source files. This keeps routing scores independent from ordinary repository inspection.
 
 ## CLI preflight
 
@@ -106,7 +112,13 @@ Run a named suite:
 python scripts/run_live_benchmark.py --repo ../fukurouserver --suite frontend
 ```
 
-Run all 15 quality cases explicitly:
+Run the independent dense-mobile holdout explicitly:
+
+```bash
+python scripts/run_live_benchmark.py --repo ../fukurouserver --suite holdout
+```
+
+Run all 17 quality cases explicitly:
 
 ```bash
 python scripts/run_live_benchmark.py --repo ../fukurouserver --all

@@ -13,7 +13,7 @@ CODEX_REQUIRED_FLAGS = {
     "--json",
     "--output-last-message",
     "--output-schema",
-    "--sandbox",
+    "--approve-for-me",
 }
 CLAUDE_REQUIRED_FLAGS = {
     "--allowedTools",
@@ -28,6 +28,7 @@ CLAUDE_REQUIRED_FLAGS = {
     "--setting-sources",
 }
 INJECTED_SKILL_PREFIXES = (
+    ".codex/skills/fukurou-development/",
     ".agents/skills/fukurou-development/",
     ".claude/skills/fukurou-development/",
 )

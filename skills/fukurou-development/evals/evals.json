@@ -212,6 +212,42 @@
         "Handles long content intentionally rather than hiding useful information.",
         "Verifies narrow viewport behavior."
       ]
+    },
+    {
+      "id": 16,
+      "name": "levels-reward-road-redesign",
+      "prompt": "В Fukurou текущую страницу /levels уже пытались переделать, но результат всё ещё выглядит сырым и неудобным. Награды должны забираться вручную: обычная лента идёт сверху, PREMIUM-бонусы — снизу на том же уровне или в осмысленных промежутках. Сначала внимательно изучи реальную страницу, её HTML/CSS/JS, API наград, соседние Fukurou-страницы и theme-токены, затем предложи конкретное направление улучшения и план реализации. Не копируй референс буквально, не превращай страницу в типовой SaaS-дашборд и не создавай новый визуальный язык. Backend меняй только если факты покажут, что текущий контракт не позволяет правильное взаимодействие. Решение должно учитывать desktop/mobile, light/dark и состояния locked, unlocked, claimable, claimed, PREMIUM unavailable и ошибки claim.",
+      "expected_output": "Diagnose the current hierarchy and interaction model from repository and live-page evidence, distinguish structural UX defects from cosmetic polish, choose a Fukurou-consistent paired-track reward architecture with manual claims, and give an implementation and verification plan without speculative backend or framework work.",
+      "files": [],
+      "expected_references": ["references/product-design.md", "references/frontend.md"],
+      "forbidden_references": ["references/architecture.md", "references/debugging.md", "references/review.md"],
+      "expectations": [
+        "Inspects the actual /levels implementation, nearby Fukurou patterns, and theme tokens before proposing changes.",
+        "Separates information architecture and reward-track comprehension problems from merely changing colors, radii, icons, or decoration.",
+        "Preserves manual claiming and makes ordinary and PREMIUM rewards read as two aligned parts of one level progression, including meaningful milestone gaps where supported by data.",
+        "Uses the existing Fukurou visual language and content hierarchy instead of producing a generic dashboard or a parallel design system.",
+        "Avoids backend/API changes unless repository evidence proves the current reward contract cannot support the chosen interaction.",
+        "Covers desktop and mobile, light and dark themes, keyboard/touch behavior, reduced motion, overflow, and realistic reward states.",
+        "Includes claim success, duplicate/error recovery, locked, claimable, claimed, and PREMIUM-unavailable verification without asking the user to choose implementation details already resolvable from evidence."
+      ]
+    },
+    {
+      "id": 17,
+      "name": "studio-chapter-workflow-mobile-holdout",
+      "prompt": "В Fukurou Studio экран подготовки выпуска показывает около 12 глав в широкой матрице. Для каждой главы последовательно видны этапы перевод → редактура → оформление → проверка → публикация; у этапов есть состояния blocked, ready, in progress, failed и done, а у текущего этапа есть действие. На desktop редактору важно быстро сравнивать прогресс нескольких глав, но на 360–390 px текущая версия просто уменьшает колонки, текст и кнопки. Изучи реальные Studio-паттерны, frontend lifecycle, theme-токены и существующий контракт данных, затем предложи конкретную информационную архитектуру, responsive-направление и план реализации. Mobile должен сохранять ясные current/next/blocked этапы и возможность ориентироваться между главами, не скрывая полезные стадии и не превращая экран в generic kanban. Backend меняй только если факты докажут недостаточность контракта. Учти desktop/mobile, light/dark, keyboard/touch, длинные подписи, loading/empty/error и reduced motion.",
+      "expected_output": "Separate cross-chapter scanning from within-chapter sequential work, preserve both jobs with a readable desktop matrix and a mobile interaction model that changes structure instead of shrinking controls, reuse existing Fukurou Studio and theme patterns, and give a concrete state-complete implementation and verification plan without speculative backend work.",
+      "files": [],
+      "expected_references": ["references/product-design.md", "references/frontend.md"],
+      "forbidden_references": ["references/architecture.md", "references/debugging.md", "references/review.md"],
+      "expectations": [
+        "Inspects existing Fukurou Studio patterns, frontend ownership, theme tokens, and the real data contract before choosing a layout.",
+        "Distinguishes desktop cross-chapter comparison from the sequential current and next action inside one chapter.",
+        "Changes the mobile interaction model instead of shrinking the desktop matrix, typography, and controls until they fit.",
+        "Preserves meaningful stage visibility, blocked and failed context, and navigation between chapters on narrow screens.",
+        "Uses existing Fukurou visual and lifecycle patterns rather than inventing a generic kanban or a parallel design system.",
+        "Avoids backend changes unless repository evidence proves the current workflow contract is insufficient.",
+        "Verifies desktop and mobile, light and dark, keyboard and touch, long labels, loading, empty, error, and reduced-motion states."
+      ]
     }
   ]
 }

@@ -82,6 +82,67 @@ class EvalValidationTests(unittest.TestCase):
             validate_evals.validate_quality(path, errors)
         self.assertTrue(any("expects and forbids" in error for error in errors))
 
+    def test_levels_reward_road_case_has_narrow_product_frontend_routing(self) -> None:
+        eval_data = json.loads(
+            (ROOT / "skills" / "fukurou-development" / "evals" / "evals.json").read_text(encoding="utf-8")
+        )
+        suites = json.loads((ROOT / "benchmarks" / "suites.json").read_text(encoding="utf-8"))
+        case = next(item for item in eval_data["evals"] if item["name"] == "levels-reward-road-redesign")
+
+        self.assertEqual(case["id"], 16)
+        self.assertEqual(
+            case["expected_references"],
+            ["references/product-design.md", "references/frontend.md"],
+        )
+        self.assertEqual(
+            set(case["forbidden_references"]),
+            {
+                "references/architecture.md",
+                "references/debugging.md",
+                "references/review.md",
+            },
+        )
+        joined_expectations = " ".join(case["expectations"]).lower()
+        for required in ("manual", "premium", "mobile", "light", "dark", "claim"):
+            self.assertIn(required, joined_expectations)
+        self.assertIn(16, suites["frontend"])
+        self.assertEqual(suites["levels"], [16])
+        self.assertIn(16, suites["routing"])
+        self.assertNotIn(16, suites["smoke"])
+
+        skill_text = (ROOT / "skills" / "fukurou-development" / "SKILL.md").read_text(encoding="utf-8")
+        frontend_text = (
+            ROOT / "skills" / "fukurou-development" / "references" / "frontend.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("visual/UX implementation is still product/frontend work", skill_text)
+        self.assertIn("desktop made smaller", frontend_text)
+        self.assertIn("one-item snap/step view", frontend_text)
+        self.assertIn("readable vertical milestone", frontend_text)
+
+    def test_dense_mobile_holdout_is_independent_and_not_in_smoke(self) -> None:
+        eval_data = json.loads(
+            (ROOT / "skills" / "fukurou-development" / "evals" / "evals.json").read_text(encoding="utf-8")
+        )
+        suites = json.loads((ROOT / "benchmarks" / "suites.json").read_text(encoding="utf-8"))
+        case = next(item for item in eval_data["evals"] if item["name"] == "studio-chapter-workflow-mobile-holdout")
+
+        self.assertEqual(case["id"], 17)
+        self.assertEqual(case["expected_references"], ["references/product-design.md", "references/frontend.md"])
+        self.assertEqual(
+            set(case["forbidden_references"]),
+            {"references/architecture.md", "references/debugging.md", "references/review.md"},
+        )
+        prompt = case["prompt"].lower()
+        for forbidden in ("/levels", "reward", "premium", "награ"):
+            self.assertNotIn(forbidden, prompt)
+        expectations = " ".join(case["expectations"]).lower()
+        for required in ("desktop", "mobile", "sequential", "chapter"):
+            self.assertIn(required, expectations)
+        self.assertEqual(suites["holdout"], [17])
+        self.assertIn(17, suites["frontend"])
+        self.assertIn(17, suites["routing"])
+        self.assertNotIn(17, suites["smoke"])
+
 
 if __name__ == "__main__":
     unittest.main()

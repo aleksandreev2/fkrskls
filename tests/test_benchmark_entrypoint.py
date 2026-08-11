@@ -37,6 +37,7 @@ class BenchmarkEntrypointTests(unittest.TestCase):
     def test_guarded_tracked_changes_ignores_only_injected_skill_files(self) -> None:
         status = "\n".join(
             [
+                "?? .codex/skills/fukurou-development/SKILL.md",
                 "?? .agents/skills/fukurou-development/SKILL.md",
                 "?? .claude/skills/fukurou-development/references/frontend.md",
                 "?? accidental.py",
@@ -46,6 +47,24 @@ class BenchmarkEntrypointTests(unittest.TestCase):
         with mock.patch.object(entry.core, "git_output", return_value=status):
             changes = entry.guarded_tracked_changes(Path("repo"))
         self.assertEqual(changes, ["?? accidental.py", " M tracked.py"])
+
+    def test_guard_ignores_replaced_or_removed_committed_codex_skill(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            repo = Path(temp) / "repo"
+            repo.mkdir()
+            core.run_process(["git", "init"], cwd=repo)
+            core.run_process(["git", "config", "user.email", "bench@example.test"], cwd=repo)
+            core.run_process(["git", "config", "user.name", "Benchmark Test"], cwd=repo)
+            old_skill = repo / ".codex/skills/fukurou-development/SKILL.md"
+            old_skill.parent.mkdir(parents=True)
+            old_skill.write_text("old skill\n", encoding="utf-8")
+            core.run_process(["git", "add", ".codex"], cwd=repo)
+            core.run_process(["git", "commit", "-m", "fixture"], cwd=repo)
+
+            core.prepare_variant(repo, "codex", "skill")
+            self.assertEqual(entry.guarded_tracked_changes(repo), [])
+            core.prepare_variant(repo, "codex", "baseline")
+            self.assertEqual(entry.guarded_tracked_changes(repo), [])
 
     def test_preflight_rejects_missing_required_flag_before_model_run(self) -> None:
         with mock.patch.object(entry.shutil, "which", return_value="/bin/codex"), \

@@ -41,6 +41,7 @@ def run_process(
     timeout: int = 900,
     stdout_path: Path | None = None,
     stderr_path: Path | None = None,
+    input_text: str | None = None,
 ) -> subprocess.CompletedProcess[str]:
     stdout_handle = stdout_path.open("w", encoding="utf-8") if stdout_path else subprocess.PIPE
     stderr_handle = stderr_path.open("w", encoding="utf-8") if stderr_path else subprocess.PIPE
@@ -50,8 +51,11 @@ def run_process(
             cwd=str(cwd) if cwd else None,
             env=env,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             stdout=stdout_handle,
             stderr=stderr_handle,
+            input=input_text,
             timeout=timeout,
             check=False,
         )
@@ -71,7 +75,9 @@ def git_output(repo: Path, *args: str) -> str:
     )
     if result.returncode != 0:
         raise RuntimeError(result.stderr.strip() or f"git {' '.join(args)} failed")
-    return result.stdout.strip()
+    # Porcelain status uses a leading space as part of the XY status code.
+    # Preserve it so callers can parse paths without shifting the first byte.
+    return result.stdout.rstrip()
 
 
 @contextmanager
@@ -101,6 +107,7 @@ def isolated_worktree(repo: Path, ref: str) -> Iterator[Path]:
 
 def remove_target_skill(worktree: Path) -> None:
     for relative in (
+        Path(".codex/skills/fukurou-development"),
         Path(".agents/skills/fukurou-development"),
         Path(".claude/skills/fukurou-development"),
     ):
@@ -137,8 +144,9 @@ def benchmark_prompt(case: dict[str, Any]) -> str:
         "runtime state. Do not force or pretend to use a skill, reference, or workflow just because this is an evaluation. "
         "Use only guidance that the host actually makes available and that is relevant to the task.\n\n"
         f"TASK:\n{prompt}\n\n"
-        "For the structured final response, `references_used` must contain only repository-relative supporting reference "
-        "files you actually consulted during this run; use an empty array if none were consulted. "
+        "For the structured final response, `references_used` must contain only specialized Fukurou skill references "
+        "you actually consulted during this run, normalized as `references/<name>.md`. Do not include application source "
+        "files, AGENTS.md, or SKILL.md; use an empty array when no specialized skill reference was consulted. "
         "`developer_intelligence_used` must reflect whether you actually used Fukurou Developer Intelligence. "
         "Keep `user_questions` empty unless an unresolved product/scope choice truly blocks a sound decision."
     )
@@ -161,10 +169,50 @@ def codex_environment(shadow_home: Path) -> dict[str, str]:
     env = os.environ.copy()
     real_home = Path.home()
     shadow_home.mkdir(parents=True, exist_ok=True)
+    powershell_cache = shadow_home / "powershell" / "ModuleAnalysisCache"
+    powershell_cache.parent.mkdir(parents=True, exist_ok=True)
     env["HOME"] = str(shadow_home)
     env["USERPROFILE"] = str(shadow_home)
     env["CODEX_HOME"] = env.get("CODEX_HOME", str(real_home / ".codex"))
+    env["PSModuleAnalysisCachePath"] = str(powershell_cache)
     return env
+
+
+def installed_user_skill_paths(home: Path | None = None) -> list[Path]:
+    root = (home or Path.home()).resolve()
+    candidates = [
+        root / ".agents/skills/fukurou-development",
+        root / ".codex/skills/fukurou-development",
+    ]
+    return [path for path in candidates if path.is_dir()]
+
+
+@contextmanager
+def masked_user_skills(paths: list[Path], backup_root: Path) -> Iterator[None]:
+    moved: list[tuple[Path, Path]] = []
+    backup_root.mkdir(parents=True, exist_ok=True)
+    try:
+        for index, source in enumerate(paths):
+            destination = backup_root / f"skill-{index}"
+            if destination.exists():
+                raise RuntimeError(f"benchmark skill backup already exists: {destination}")
+            shutil.move(str(source), str(destination))
+            moved.append((source, destination))
+        yield
+    finally:
+        restore_errors: list[str] = []
+        for source, destination in reversed(moved):
+            try:
+                if source.exists():
+                    raise RuntimeError(f"cannot restore user skill because destination exists: {source}")
+                source.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(destination), str(source))
+            except Exception as exc:  # pragma: no cover - emergency path
+                restore_errors.append(str(exc))
+        if backup_root.exists() and not any(backup_root.iterdir()):
+            backup_root.rmdir()
+        if restore_errors:
+            raise RuntimeError("failed to restore masked user skill: " + "; ".join(restore_errors))
 
 
 def build_codex_command(
@@ -186,14 +234,13 @@ def build_codex_command(
             "exec",
             "--ephemeral",
             "--json",
-            "--sandbox",
-            "workspace-write",
+            "--approve-for-me",
             "--ignore-user-config",
             "--output-schema",
             str(SCHEMA_PATH),
             "--output-last-message",
             str(structured_path),
-            prompt,
+            "-",
         ]
     )
     return command
@@ -316,14 +363,11 @@ def extract_structured(agent: str, events: list[dict[str, Any]], structured_path
 
 def extract_trace(events: list[dict[str, Any]]) -> dict[str, Any]:
     reference_signals: set[str] = set()
-    skill_signal = False
+    skill_entrypoint_command_signal = False
+    skill_tool_signal = False
     tool_calls: dict[str, int] = {}
     seen_tool_ids: set[str] = set()
     for event in events:
-        joined = "\n".join(strings_in(event))
-        reference_signals.update(REFERENCE_RE.findall(joined))
-        if "fukurou-development" in joined:
-            skill_signal = True
         for node in walk_dicts(event):
             if node.get("type") == "tool_use" and isinstance(node.get("name"), str):
                 tool_id = str(node.get("id", ""))
@@ -333,16 +377,37 @@ def extract_trace(events: list[dict[str, Any]]) -> dict[str, Any]:
                     seen_tool_ids.add(tool_id)
                 name = node["name"]
                 tool_calls[name] = tool_calls.get(name, 0) + 1
+                tool_input = normalize_trace_path("\n".join(strings_in(node.get("input", {}))))
+                reference_signals.update(REFERENCE_RE.findall(tool_input))
+                if name == "Skill" and "fukurou-development" in tool_input:
+                    skill_tool_signal = True
             item = node.get("item")
             if isinstance(item, dict) and str(event.get("type", "")).endswith("completed"):
                 item_type = item.get("type")
                 if isinstance(item_type, str):
                     tool_calls[item_type] = tool_calls.get(item_type, 0) + 1
+                if item_type == "command_execution" and item.get("exit_code") == 0:
+                    command = normalize_trace_path(str(item.get("command", "")))
+                    reference_signals.update(REFERENCE_RE.findall(command))
+                    if skill_entrypoint_in(command):
+                        skill_entrypoint_command_signal = True
     return {
-        "skill_signal": skill_signal,
+        "skill_signal": skill_tool_signal or skill_entrypoint_command_signal,
+        "skill_entrypoint_command_signal": skill_entrypoint_command_signal,
+        "skill_tool_signal": skill_tool_signal,
         "reference_signals": sorted(reference_signals),
         "tool_calls": dict(sorted(tool_calls.items())),
     }
+
+
+def skill_entrypoint_in(value: str) -> bool:
+    normalized = normalize_trace_path(value)
+    suffix = "/skills/fukurou-development/SKILL.md"
+    return any(f"{root}{suffix}" in normalized for root in (".agents", ".codex", ".claude"))
+
+
+def normalize_trace_path(value: str) -> str:
+    return re.sub(r"/+", "/", value.replace("\\", "/"))
 
 
 def walk_dicts(value: Any) -> Iterator[dict[str, Any]]:
@@ -418,6 +483,7 @@ def run_one(
     run_dir = out_dir / run_name
     run_dir.mkdir(parents=True, exist_ok=True)
     prompt = benchmark_prompt(case)
+    (run_dir / "prompt.txt").write_text(prompt, encoding="utf-8")
     stdout_path = run_dir / "events.jsonl"
     stderr_path = run_dir / "stderr.log"
     structured_path = run_dir / "structured.json"
@@ -458,6 +524,7 @@ def run_one(
             command,
             cwd=worktree,
             env=env,
+            input_text=prompt if agent == "codex" else None,
             timeout=timeout,
             stdout_path=stdout_path,
             stderr_path=stderr_path,
@@ -572,6 +639,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--claude-max-turns", type=int, default=16)
     parser.add_argument("--claude-max-budget-usd", type=float, default=0.50)
     parser.add_argument("--dry-run", action="store_true", help="Prepare worktrees and print commands without calling a model.")
+    parser.add_argument(
+        "--mask-user-skill",
+        action="store_true",
+        help="Temporarily move installed user copies of fukurou-development out of discovery, restoring them on exit.",
+    )
     return parser.parse_args()
 
 
@@ -587,6 +659,14 @@ def main() -> int:
     agents = ["codex", "claude"] if args.agent == "both" else [args.agent]
     variants = ["baseline", "skill"] if args.variant == "both" else [args.variant]
 
+    installed_skills = installed_user_skill_paths() if "codex" in agents else []
+    if installed_skills and "baseline" in variants and not args.dry_run and not args.mask_user_skill:
+        paths = ", ".join(str(path) for path in installed_skills)
+        raise RuntimeError(
+            "Codex baseline would be contaminated by installed fukurou-development copies: "
+            f"{paths}. Re-run the guarded entrypoint with --mask-user-skill."
+        )
+
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     out_dir = args.out.resolve() / stamp
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -600,6 +680,7 @@ def main() -> int:
         "agents": agents,
         "variants": variants,
         "dry_run": args.dry_run,
+        "masked_user_skills": [str(path) for path in installed_skills] if args.mask_user_skill else [],
     }
     (out_dir / "metadata.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
 
@@ -607,37 +688,39 @@ def main() -> int:
     failures = 0
     total = len(cases) * len(agents) * len(variants)
     index = 0
-    for case in cases:
-        for agent in agents:
-            for variant in variants:
-                index += 1
-                print(f"[{index}/{total}] {case['name']} / {agent} / {variant}", flush=True)
-                try:
-                    record = run_one(
-                        repo=repo,
-                        ref=args.ref,
-                        case=case,
-                        agent=agent,
-                        variant=variant,
-                        out_dir=out_dir,
-                        timeout=args.timeout,
-                        codex_model=args.codex_model,
-                        claude_model=args.claude_model,
-                        claude_max_turns=args.claude_max_turns,
-                        claude_max_budget_usd=args.claude_max_budget_usd,
-                        dry_run=args.dry_run,
-                    )
-                except Exception as exc:
-                    failures += 1
-                    record = {
-                        "case_id": case["id"],
-                        "case_name": case["name"],
-                        "agent": agent,
-                        "variant": variant,
-                        "error": str(exc),
-                    }
-                    print(f"  ERROR: {exc}", file=sys.stderr)
-                records.append(record)
+    paths_to_mask = installed_skills if args.mask_user_skill and not args.dry_run else []
+    with masked_user_skills(paths_to_mask, out_dir / "masked-user-skills"):
+        for case in cases:
+            for agent in agents:
+                for variant in variants:
+                    index += 1
+                    print(f"[{index}/{total}] {case['name']} / {agent} / {variant}", flush=True)
+                    try:
+                        record = run_one(
+                            repo=repo,
+                            ref=args.ref,
+                            case=case,
+                            agent=agent,
+                            variant=variant,
+                            out_dir=out_dir,
+                            timeout=args.timeout,
+                            codex_model=args.codex_model,
+                            claude_model=args.claude_model,
+                            claude_max_turns=args.claude_max_turns,
+                            claude_max_budget_usd=args.claude_max_budget_usd,
+                            dry_run=args.dry_run,
+                        )
+                    except Exception as exc:
+                        failures += 1
+                        record = {
+                            "case_id": case["id"],
+                            "case_name": case["name"],
+                            "agent": agent,
+                            "variant": variant,
+                            "error": str(exc),
+                        }
+                        print(f"  ERROR: {exc}", file=sys.stderr)
+                    records.append(record)
 
     summarize(records, out_dir)
     print(f"Results: {out_dir}")

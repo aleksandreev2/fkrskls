@@ -57,7 +57,7 @@ Use Developer Intelligence context, make the smallest change, and run the cheape
 
 Read `references/debugging.md`.
 
-Establish the failure and root cause before implementing a fix. Do not use this mode for a literal visible typo unless inspection reveals a behavioral cause.
+Establish the failure and root cause before implementing a fix. Do not use this mode for a literal visible typo unless inspection reveals a behavioral cause. A disliked or unsuccessful visual/UX implementation is still product/frontend work, not a debugging task, unless an observable behavior violates a contract.
 
 ### User-facing feature, workflow, navigation, or ambiguous UX decision
 
