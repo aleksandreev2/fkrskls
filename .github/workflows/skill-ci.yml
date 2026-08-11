@@ -1,0 +1,43 @@
+name: Skill CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - "agent/**"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate (${{ matrix.os }}, Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+        python:
+          - "3.11"
+          - "3.13"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Validate skill package
+        run: python scripts/validate_skill.py
+
+      - name: Run installer tests
+        run: python -m unittest discover -s tests -p "test_*.py" -v
+
+      - name: Compile Python tooling
+        run: python -m py_compile scripts/validate_skill.py skills/fukurou-development/scripts/install.py tests/test_installer.py

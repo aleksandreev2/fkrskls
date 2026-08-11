@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fukurou Engineering"
+  short_description: "Design, debug, build, and verify Fukurou"
+  default_prompt: "Use $fukurou-development to solve this Fukurou task with bounded context, product judgment, root-cause reasoning, and verified implementation."
