@@ -1,0 +1,217 @@
+{
+  "skill_name": "fukurou-development",
+  "evals": [
+    {
+      "id": 1,
+      "name": "reader-soft-nav-listener-regression",
+      "prompt": "@GitHub fukurouserver После soft navigation обработчик кнопки в ридере срабатывает дважды. Разберись и исправь, без костылей с setTimeout.",
+      "expected_output": "Find the lifecycle/root cause, fix the owning listener or teardown path, add regression coverage where practical, and verify the changed reader behavior.",
+      "files": [],
+      "expected_references": ["references/debugging.md", "references/frontend.md"],
+      "forbidden_references": ["references/product-design.md"],
+      "expectations": [
+        "Investigates the lifecycle and proves a root cause before patching.",
+        "Does not add timing delays or duplicate guards as the primary fix.",
+        "Keeps the change inside the owning reader/frontend lifecycle unless evidence requires broader scope.",
+        "Uses fresh verification before claiming the bug is fixed."
+      ]
+    },
+    {
+      "id": 2,
+      "name": "library-mobile-redesign",
+      "prompt": "В Fukurou библиотека на телефоне неудобная: фильтры, продолжить чтение и сохранённые тайтлы мешают друг другу. Переделай нормально, но не превращай в SaaS-дашборд.",
+      "expected_output": "Clarify the user job from repository evidence, compare materially different interaction approaches, choose one Fukurou-consistent direction, implement it responsively, and verify relevant states.",
+      "files": [],
+      "expected_references": ["references/product-design.md", "references/frontend.md"],
+      "forbidden_references": ["references/architecture.md"],
+      "expectations": [
+        "Treats this as a product/interaction problem before styling.",
+        "Considers mobile hierarchy, loading/empty/error states, and real long content.",
+        "Reuses the Fukurou design system instead of inventing a new visual language.",
+        "Does not propose a framework rewrite to solve the page-level problem."
+      ]
+    },
+    {
+      "id": 3,
+      "name": "explicit-button-polish",
+      "prompt": "В Fukurou кнопка Add to library уже работает. Сделай её визуально аккуратнее и в стиле остальных CTA, поведение не меняй.",
+      "expected_output": "Make the smallest visual-only change using nearby Fukurou tokens/components and verify relevant light/dark/mobile states without unnecessary product discovery.",
+      "files": [],
+      "expected_references": ["references/frontend.md"],
+      "forbidden_references": ["references/product-design.md", "references/architecture.md"],
+      "expectations": [
+        "Does not turn an explicit visual refinement into a product redesign exercise.",
+        "Checks existing tokens/components before adding new ones.",
+        "Preserves behavior and validates the changed visual states."
+      ]
+    },
+    {
+      "id": 4,
+      "name": "literal-copy-typo",
+      "prompt": "В Fukurou на странице настроек написано 'Notifictions'. Исправь на 'Notifications'. Больше ничего не трогай.",
+      "expected_output": "Apply the literal local correction with minimal inspection and normal changed-scope verification, without loading specialized guidance or broadening scope.",
+      "files": [],
+      "expected_references": [],
+      "forbidden_references": ["references/debugging.md", "references/product-design.md", "references/frontend.md", "references/architecture.md", "references/review.md"],
+      "expectations": [
+        "Treats the literal typo as a trivial correction rather than a debugging investigation.",
+        "Does not broaden into unrelated copy cleanup.",
+        "Uses the cheapest sufficient verification."
+      ]
+    },
+    {
+      "id": 5,
+      "name": "reader-performance-regression",
+      "prompt": "После последних изменений в Fukurou ридер на длинных главах начал заметно тормозить на мобильных. Найди причину, не поднимай performance budget просто чтобы тест прошёл.",
+      "expected_output": "Measure or reproduce the regression, trace the frontend cause, fix the earliest appropriate source, preserve budgets unless an evidenced tradeoff requires a deliberate change, and verify performance behavior.",
+      "files": [],
+      "expected_references": ["references/debugging.md", "references/frontend.md"],
+      "forbidden_references": ["references/product-design.md"],
+      "expectations": [
+        "Uses measurements or direct evidence instead of guessing.",
+        "Does not raise budgets or timeouts as a substitute for a fix.",
+        "Checks reader lifecycle, loaded code/assets, and repeated work where relevant."
+      ]
+    },
+    {
+      "id": 6,
+      "name": "private-api-authz-bug",
+      "prompt": "В private publisher API Fukurou пользователь без нужного права каким-то образом может создать главу. Исправь и проверь отрицательный кейс.",
+      "expected_output": "Trace the authorization boundary, fix it at the owning backend/API layer, preserve API contracts where possible, add a negative authorization regression case, and run relevant checks.",
+      "files": [],
+      "expected_references": ["references/debugging.md", "references/architecture.md"],
+      "forbidden_references": ["references/product-design.md", "references/frontend.md"],
+      "expectations": [
+        "Identifies the trust boundary before changing code.",
+        "Adds or strengthens a negative authorization case.",
+        "Does not route around authentication, CSRF/session, or existing security boundaries."
+      ]
+    },
+    {
+      "id": 7,
+      "name": "cross-domain-refactor",
+      "prompt": "В fukurouserver одинаковая логика расчёта доступности тайтла появилась в catalog и library. Разберись, стоит ли вынести общее, и если да — сделай без нового god-helper.",
+      "expected_output": "Determine actual ownership and duplication first, extract only if real shared semantics and lifecycle justify it, preserve callers and tests, and avoid a generic dumping-ground helper.",
+      "files": [],
+      "expected_references": ["references/architecture.md"],
+      "forbidden_references": ["references/product-design.md"],
+      "expectations": [
+        "Does not extract solely because two files look similar.",
+        "Uses component ownership and real callers to decide whether sharing is justified.",
+        "Keeps behavior-preserving refactor evidence separate from unrelated cleanup."
+      ]
+    },
+    {
+      "id": 8,
+      "name": "microservice-proposal",
+      "prompt": "Давай для одной новой очереди в Fukurou сразу вынесем отдельный микросервис и Kubernetes, чтобы было современно. Реализуй.",
+      "expected_output": "Challenge the proposed architecture against Fukurou's modular-monolith constraints and actual operational need, then implement the smallest architecture that satisfies the queue requirements unless evidence proves a service boundary is necessary.",
+      "files": [],
+      "expected_references": ["references/architecture.md"],
+      "forbidden_references": ["references/product-design.md", "references/frontend.md"],
+      "expectations": [
+        "Does not obey a fashionable architecture request blindly.",
+        "Requires concrete scaling, isolation, ownership, or operational evidence before a service split.",
+        "Prefers the existing modular monolith when it can solve the requirement cleanly."
+      ]
+    },
+    {
+      "id": 9,
+      "name": "homepage-discovery-feature",
+      "prompt": "Добавь на главную Fukurou новый блок рекомендаций. Я пока не уверен, показывать там персональные рекомендации, тренды или продолжение чтения — выбери сильный вариант и сделай.",
+      "expected_output": "Use product evidence to distinguish the competing user jobs, choose a clear homepage role, implement within current discovery patterns, and verify responsive/content states.",
+      "files": [],
+      "expected_references": ["references/product-design.md", "references/frontend.md"],
+      "forbidden_references": ["references/architecture.md"],
+      "expectations": [
+        "Compares materially different product outcomes rather than cosmetic layouts.",
+        "Chooses a direction when evidence clearly favors one instead of asking the user to decide implementation details.",
+        "Tests the block with realistic content and mobile constraints."
+      ]
+    },
+    {
+      "id": 10,
+      "name": "ci-failure-investigation",
+      "prompt": "В fukurouserver упал Quality workflow после моего PR. Найди реальную причину и исправь только если падение связано с diff.",
+      "expected_output": "Inspect the failing check evidence, separate unrelated infrastructure/external failures from diff-caused failures, fix only a supported root cause, and re-run the relevant verification.",
+      "files": [],
+      "expected_references": ["references/debugging.md"],
+      "forbidden_references": ["references/product-design.md", "references/frontend.md"],
+      "expectations": [
+        "Does not assume every red CI check is caused by the branch.",
+        "Uses logs/check evidence before editing.",
+        "Does not weaken the failing quality gate to make CI green."
+      ]
+    },
+    {
+      "id": 11,
+      "name": "review-current-pr",
+      "prompt": "Проверь текущий PR Fukurou перед merge. Не придирайся к стилю ради количества замечаний — найди то, что реально может сломаться.",
+      "expected_output": "Review the final diff in impact order, report evidence-backed correctness/security/regression/product issues, and allow a clean review when no substantive findings exist.",
+      "files": [],
+      "expected_references": ["references/review.md"],
+      "forbidden_references": ["references/product-design.md"],
+      "expectations": [
+        "Prioritizes correctness, security, regressions, completeness, and performance over formatting.",
+        "Ties findings to an execution path or concrete changed behavior.",
+        "Does not manufacture low-value findings to avoid returning a clean review."
+      ]
+    },
+    {
+      "id": 12,
+      "name": "third-failed-css-fix",
+      "prompt": "Мы уже три раза пытались починить мобильный drawer Fukurou CSS-правками, и каждый раз вылезает новая проблема со скроллом. Продолжай и исправь нормально.",
+      "expected_output": "Stop patching, rebuild the causal model around scroll containers/containing blocks/lifecycle, then make a root-cause frontend fix and verify drawer behavior across relevant mobile states.",
+      "files": [],
+      "expected_references": ["references/debugging.md", "references/frontend.md"],
+      "forbidden_references": ["references/architecture.md"],
+      "expectations": [
+        "Honors the three-failed-fixes stop rule and does not add a fourth blind CSS patch.",
+        "Re-checks the ownership and browser layout/scroll model.",
+        "Uses live behavior evidence before declaring the drawer fixed."
+      ]
+    },
+    {
+      "id": 13,
+      "name": "theme-token-duplication",
+      "prompt": "На title page Fukurou нужен ещё один цвет поверхности. Там уже куча локальных --fk-title-* и глобальные --theme-*. Сделай так, чтобы не плодить токены без причины.",
+      "expected_output": "Inspect the semantic role and existing global/page tokens, reuse the nearest correct role or consolidate duplication, and add a new semantic token only if the concept is genuinely distinct.",
+      "files": [],
+      "expected_references": ["references/frontend.md"],
+      "forbidden_references": ["references/product-design.md", "references/architecture.md"],
+      "expectations": [
+        "Checks global theme tokens and nearby page-semantic tokens before creating a new one.",
+        "Does not replace every local value as part of an unrelated design-system refactor.",
+        "Verifies light and dark theme behavior."
+      ]
+    },
+    {
+      "id": 14,
+      "name": "worker-retry-loop",
+      "prompt": "AutoDownload worker Fukurou иногда повторно обрабатывает одну и ту же задачу после падения браузера. Разберись с claim/retry/idempotency и исправь.",
+      "expected_output": "Trace durable claim and side-effect ordering, distinguish retryable/permanent failure, make duplicate execution safe or impossible at the correct boundary, and add regression evidence.",
+      "files": [],
+      "expected_references": ["references/debugging.md", "references/architecture.md"],
+      "forbidden_references": ["references/product-design.md", "references/frontend.md"],
+      "expectations": [
+        "Examines durable state before process-local guards.",
+        "Checks crash timing between claim, browser side effect, and state transition.",
+        "Does not convert all exceptions into retries."
+      ]
+    },
+    {
+      "id": 15,
+      "name": "explicit-mobile-layout-fix",
+      "prompt": "На Fukurou profile mobile карточка профиля вылезает за экран только из-за длинного имени. Ничего не редизайнивай, просто исправь overflow нормально.",
+      "expected_output": "Fix the local responsive overflow using the existing layout system and realistic long-content handling, without escalating into a product redesign.",
+      "files": [],
+      "expected_references": ["references/frontend.md"],
+      "forbidden_references": ["references/product-design.md", "references/architecture.md"],
+      "expectations": [
+        "Treats the user-stated local cause and scope as evidence unless inspection disproves it.",
+        "Handles long content intentionally rather than hiding useful information.",
+        "Verifies narrow viewport behavior."
+      ]
+    }
+  ]
+}
