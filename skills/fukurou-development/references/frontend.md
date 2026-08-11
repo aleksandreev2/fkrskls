@@ -69,7 +69,9 @@ A visual change is incomplete if it only works in the theme used while coding.
 
 ## Mobile is a first-class surface
 
-Do not define mobile as "desktop stacked vertically".
+Do not define mobile as "desktop stacked vertically" or as desktop made smaller.
+
+For dense paired or sequential structures such as progression paths, timelines, comparison rows, or related reward tracks, preserve the relationship between items by changing the interaction model when needed: use a one-item snap/step view, a readable vertical milestone, or another existing Fukurou pattern supported by the real scan task. Do not solve density by shrinking type, actions, and columns until the desktop layout merely fits. Choose the narrow layout from real item count, comparison needs, and the user's next action.
 
 For changed flows, check:
 
