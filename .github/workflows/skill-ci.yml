@@ -39,6 +39,9 @@ jobs:
       - name: Validate behavioral evals
         run: python scripts/validate_evals.py
 
+      - name: Validate live benchmark harness
+        run: python scripts/validate_benchmarks.py
+
       - name: Run tests
         run: python -m unittest discover -s tests -p "test_*.py" -v
 
@@ -47,6 +50,11 @@ jobs:
           python -m py_compile
           scripts/validate_skill.py
           scripts/validate_evals.py
+          scripts/validate_benchmarks.py
+          scripts/live_benchmark.py
+          scripts/run_live_benchmark.py
           skills/fukurou-development/scripts/install.py
           tests/test_installer.py
           tests/test_evals.py
+          tests/test_live_benchmark.py
+          tests/test_benchmark_entrypoint.py
