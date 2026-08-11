@@ -36,8 +36,17 @@ jobs:
       - name: Validate skill package
         run: python scripts/validate_skill.py
 
-      - name: Run installer tests
+      - name: Validate behavioral evals
+        run: python scripts/validate_evals.py
+
+      - name: Run tests
         run: python -m unittest discover -s tests -p "test_*.py" -v
 
       - name: Compile Python tooling
-        run: python -m py_compile scripts/validate_skill.py skills/fukurou-development/scripts/install.py tests/test_installer.py
+        run: >-
+          python -m py_compile
+          scripts/validate_skill.py
+          scripts/validate_evals.py
+          skills/fukurou-development/scripts/install.py
+          tests/test_installer.py
+          tests/test_evals.py

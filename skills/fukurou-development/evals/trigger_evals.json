@@ -1,0 +1,27 @@
+[
+  {"query":"@GitHub fukurouserver почини баг в ридере после soft navigation","should_trigger":true,"reason":"Engineering change in Fukurou repository."},
+  {"query":"В Fukurou на мобилке каталог неудобный, переделай UX","should_trigger":true,"reason":"Fukurou UI/UX work."},
+  {"query":"Проверь текущий PR fukurouserver перед merge","should_trigger":true,"reason":"Fukurou code review."},
+  {"query":"Почему AutoDownload worker в Fukurou повторяет jobs?","should_trigger":true,"reason":"Fukurou diagnosis/debugging."},
+  {"query":"Добавь новый backend endpoint в Fukurou для истории чтения","should_trigger":true,"reason":"Fukurou feature/backend work."},
+  {"query":"Сделай админку Fukurou стабильнее и удобнее","should_trigger":true,"reason":"Fukurou product and engineering work."},
+  {"query":"В fukurouserver Quality workflow красный, разберись","should_trigger":true,"reason":"Fukurou CI debugging."},
+  {"query":"Отрефактори дублирующуюся логику catalog/library в Fukurou","should_trigger":true,"reason":"Fukurou architecture/refactor task."},
+  {"query":"Оптимизируй Fukurou reader на слабых телефонах","should_trigger":true,"reason":"Fukurou performance work."},
+  {"query":"Исправь светлую тему на title page fukurou.one","should_trigger":true,"reason":"Fukurou visual/theme work."},
+  {"query":"Проверь миграцию Django в fukurouserver и связанные риски","should_trigger":true,"reason":"Fukurou database/architecture review."},
+  {"query":"На форуме Fukurou после удаления пост снова появляется, найди причину","should_trigger":true,"reason":"Fukurou behavioral regression."},
+
+  {"query":"Помоги написать Telegram-бота на Python с нуля","should_trigger":false,"reason":"Unrelated project."},
+  {"query":"В моём React-магазине карточки товаров ломаются на mobile","should_trigger":false,"reason":"Frontend task outside Fukurou."},
+  {"query":"Объясни, что такое Django middleware","should_trigger":false,"reason":"General knowledge, not Fukurou work."},
+  {"query":"Сделай дизайн лендинга для кофейни","should_trigger":false,"reason":"Design task outside Fukurou."},
+  {"query":"Проверь PR в репозитории mycompany/payments-api","should_trigger":false,"reason":"Code review outside Fukurou."},
+  {"query":"Почему GitHub Actions падает в другом моём проекте?","should_trigger":false,"reason":"CI diagnosis outside Fukurou."},
+  {"query":"Напиши главу веб-новеллы на русском","should_trigger":false,"reason":"Writing request."},
+  {"query":"Составь таблицу бюджета на месяц","should_trigger":false,"reason":"Spreadsheet/planning task."},
+  {"query":"Найди рестораны рядом со мной","should_trigger":false,"reason":"Local recommendation request."},
+  {"query":"Сгенерируй обложку для ранобэ","should_trigger":false,"reason":"Image generation, not engineering."},
+  {"query":"Расскажи плюсы и минусы микросервисов","should_trigger":false,"reason":"Generic architecture explanation without Fukurou context."},
+  {"query":"Улучши CSS этой кнопки в приложенном HTML-файле","should_trigger":false,"reason":"Frontend edit without Fukurou context."}
+]
