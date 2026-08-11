@@ -2,7 +2,7 @@
 
 Canonical Agent Skills for development of [Fukurou](https://github.com/aleksandreev2/fukurouserver).
 
-This repository is intentionally separate from the application repository so agent behavior can be versioned, tested, reviewed, and installed for multiple coding agents without coupling its lifecycle to production code.
+This repository is intentionally separate from the application repository so agent behavior can be versioned, tested, reviewed, benchmarked, and installed for multiple coding agents without coupling its lifecycle to production code.
 
 ## Available skill
 
@@ -52,19 +52,20 @@ A missing, stale, or unmanaged copy returns a non-zero exit code.
 
 ## Repository validation
 
-Run the same structural checks used by CI:
+Run the same deterministic checks used by CI:
 
 ```bash
 python scripts/validate_skill.py
 python scripts/validate_evals.py
+python scripts/validate_benchmarks.py
 python -m unittest discover -s tests -p "test_*.py" -v
 ```
 
-GitHub Actions runs these checks on Ubuntu and Windows with Python 3.11 and 3.13.
+GitHub Actions runs these checks on Ubuntu and Windows with Python 3.11 and 3.13. Normal CI never calls a paid model.
 
 ## Behavioral evals
 
-The repository now keeps two eval corpora inside the skill:
+The repository keeps two eval corpora inside the skill:
 
 - `evals/evals.json` — realistic Fukurou engineering tasks with expected routing and behavioral outcomes;
 - `evals/trigger_evals.json` — prompts that should and should not activate the skill.
@@ -78,11 +79,49 @@ The quality corpus deliberately includes:
 
 CI enforces a progressive-disclosure contract: a normal eval may expect no more than two specialized references. This prevents future changes from quietly turning the skill into an "always read everything" prompt.
 
-Static CI validates the corpus and routing contract; it does **not** claim to measure model quality. Live Codex/Claude evaluations should run the same prompts against the same Fukurou repository state and compare with-skill vs without-skill or previous-skill behavior. See `skills/fukurou-development/evals/README.md`.
+Static CI validates the corpus and routing contract; it does **not** claim to measure model quality.
+
+## Live Codex / Claude benchmark
+
+`scripts/run_live_benchmark.py` is the guarded public entrypoint for paired real-agent runs against one committed Fukurou repository state. It performs CLI capability checks and purity guards before delegating to the benchmark core.
+
+The default smoke benchmark compares baseline vs skill on five different engineering cases for both Codex and Claude Code:
+
+```bash
+python scripts/run_live_benchmark.py --repo ../fukurouserver
+```
+
+Useful narrower runs:
+
+```bash
+python scripts/run_live_benchmark.py --repo ../fukurouserver --agent codex
+python scripts/run_live_benchmark.py --repo ../fukurouserver --agent claude
+python scripts/run_live_benchmark.py --repo ../fukurouserver --case 1
+python scripts/run_live_benchmark.py --repo ../fukurouserver --suite frontend
+```
+
+Running all 15 quality cases is explicit because it can consume significant model usage:
+
+```bash
+python scripts/run_live_benchmark.py --repo ../fukurouserver --all
+```
+
+The runner creates a fresh detached Git worktree for every run, injects the skill only for the `skill` variant, hides personal Codex skills with a shadow home, limits Claude discovery to project settings, and never copies the eval answer corpus into the runtime skill. Claude edit tools are explicitly disabled. Planning runs may create ignored Developer Intelligence state, but any tracked or unexpected untracked source change is reported as a purity violation.
+
+Before the first model request, the entrypoint verifies that each requested CLI exposes every benchmark-required flag. This avoids spending a run only to discover an incompatible CLI version.
+
+Results are written to ignored `benchmark-results/` directories with raw event streams, structured outputs, usage telemetry, routing results, and a Markdown pair summary.
+
+See [`benchmarks/README.md`](benchmarks/README.md) for isolation details, cost controls, model pinning, result interpretation, and dry-run usage.
 
 ## Structure
 
 ```text
+benchmarks/
+├─ README.md
+├─ response_schema.json
+└─ suites.json
+
 skills/
 └─ fukurou-development/
    ├─ SKILL.md
@@ -102,12 +141,17 @@ skills/
       └─ install.py
 
 scripts/
+├─ live_benchmark.py
+├─ run_live_benchmark.py
+├─ validate_benchmarks.py
 ├─ validate_evals.py
 └─ validate_skill.py
 
 tests/
+├─ test_benchmark_entrypoint.py
 ├─ test_evals.py
-└─ test_installer.py
+├─ test_installer.py
+└─ test_live_benchmark.py
 
 docs/
 └─ research-decisions.md
@@ -124,6 +168,7 @@ docs/
 - Keep routine fixes lightweight; escalate only genuinely ambiguous product, design, or architecture decisions.
 - Do not automatically load a final-review reference after every non-trivial edit.
 - Require fresh evidence before claiming work is fixed, passing, or complete.
+- Benchmark baseline and skill on the same committed repository state before optimizing prompts from intuition.
 
 ## Research provenance
 

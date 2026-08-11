@@ -1,0 +1,44 @@
+{
+  "type": "object",
+  "properties": {
+    "summary": {"type": "string"},
+    "root_cause_or_decision": {"type": "string"},
+    "approach": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "references_used": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "developer_intelligence_used": {"type": "boolean"},
+    "verification_plan": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "risks": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "user_questions": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["low", "medium", "high"]
+    }
+  },
+  "required": [
+    "summary",
+    "root_cause_or_decision",
+    "approach",
+    "references_used",
+    "developer_intelligence_used",
+    "verification_plan",
+    "risks",
+    "user_questions",
+    "confidence"
+  ],
+  "additionalProperties": false
+}
